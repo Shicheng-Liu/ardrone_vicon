@@ -1,0 +1,583 @@
+﻿#include "ros/ros.h"
+#include "geometry_msgs/Twist.h"			//for command velocity
+#include "geometry_msgs/Vector3.h"			//for command velocity
+#include "std_msgs/Empty.h"	 				//For take off and landing
+#include "ardrone_autonomy/CamSelect.h"    	// For toggling camera
+#include "ardrone_autonomy/Navdata.h"    //Accessing ardrone's published data
+#include "ardrone_autonomy/vector31.h"
+#include "ardrone_autonomy/vector21.h"
+#include "sensor_msgs/Imu.h"
+#include "nav_msgs/Odometry.h"
+#include "ardrone_autonomy/navdata_gps.h"    //Accessing ardrone's published data
+#include <sensor_msgs/Joy.h>
+#include <stdio.h>
+#include <math.h>
+#include <termios.h>
+#include <sstream>
+#include <iostream>
+#include <fstream>
+#include "std_msgs/String.h"
+#include "std_msgs/Float64.h"
+#include "ardrone_test/Drone_odo.h"
+#include "ardrone_test/est_co.h"
+//for gazebo sim
+#include "nav_msgs/Odometry.h"
+// including vicons message
+#include "geometry_msgs/TransformStamped.h"
+
+// class variables
+std_msgs::Empty emp_msg;				// variable in the take off and landing class
+geometry_msgs::Twist vel_msg;			// variable in the command velocity class
+
+// Variables for Publishing
+ros::Publisher T_pub_empty;				//take off publisher
+ros::Publisher L_pub_empty;				//landing publisher
+ros::Publisher velocity_publisher;		// velocity publisher
+
+// Variables for Subscribing
+ros::Subscriber pose_subscriber;		// ardrone navdata subsciber
+ros::Subscriber gps_subscriber;		// ardrone navdata subsciber
+ros::Subscriber imu_subscriber;		// ardrone navdata subsciber
+ros::Subscriber joy_sub_;
+ros::Subscriber sim_state_sub;          //getting state from gazebo simulator
+ros::Subscriber vicon_sub;		// vicon data topic subscriber for ardrone1 object
+ros::Subscriber vicon_sub_2;		// vicon data topic subscriber for lambo object
+// Variables for Service
+ros::ServiceClient client1;		// ardrone camera service
+
+using namespace std;
+
+float lx, ly, lz, ax, ay, az,foc = 685, angx,angy,angz, est_x, est_y, est_z,K_est_x, K_est_y, K_est_z,test_x,test_y,test_z;
+int to, la, f = 200 , redX, redY, res =0, H=0,I=0,J=0;
+double k = 0.51, z, tf, ang_time,hem; // k value for tau
+double lat, lon, ele;
+double xD=7,yD=4,zD=1;
+//gps variables///
+double new_lat, new_lon;
+bool gps_cntr = 0;
+//static float pos_x = 0, pos_y = 0, pos_z = 0;
+const double PI = 3.14159265359;
+double Kp = 0.2, Kd = 1,Kpz;// Gain for the controller
+double k1 = 2.438, k2 = 0.779, k3 = 1.234, k4 = 0.221;// Gain for the controller
+double tol = 0.4;// error tolerance
+int kinect_ready=0;
+
+//class instances
+ardrone_autonomy::Navdata drone_navdata;  	// Using this class variable for storing navdata
+sensor_msgs::Imu ang;
+nav_msgs::Odometry odo;
+nav_msgs::Odometry sim_statedata;  	// Using this class variable for storing state data for Gazebo simulator
+geometry_msgs::TransformStamped vicon_statedata;  	// Using this class variable for storing state data for ardrone1 from Vicon 
+geometry_msgs::TransformStamped vicon_statedata_2;  	// Using this class variable for storing state data for lambo (RC CAR) from Vicon 
+
+//callback function declarations
+void NumCallback(const ardrone_test::Drone_odo::ConstPtr& val);
+void EstCallback(const ardrone_test::est_co::ConstPtr& est);
+void INS_K_Callback(const ardrone_test::est_co::ConstPtr& esti);
+void poseCallback(const ardrone_autonomy::Navdata::ConstPtr & pose_message);		// drone actual data
+void gpsCallback(const ardrone_autonomy::navdata_gps::ConstPtr & gps_message);		// drone actual data
+void new_gpsCallback(const std_msgs::String::ConstPtr& gps1);
+void imuCallback(const sensor_msgs::Imu::ConstPtr & imu_message);		// drone actual data
+void joyCallback(const sensor_msgs::Joy::ConstPtr & joy);		// Joy data
+void record();
+int getch();
+void testdataCallback(const ardrone_autonomy::vector31::ConstPtr & test );
+void SimStateCallback(const nav_msgs::Odometry::ConstPtr & sim_state_message); //gazebo sim 
+void ViconStateCallback(const geometry_msgs::TransformStamped::ConstPtr & vicon_state_message); //callback function for vicon data of ardrone1
+void ViconStateCallback_2(const geometry_msgs::TransformStamped::ConstPtr & vicon_state_message); //callback function for vicon data of lambo (RC CAR)
+void hover(int timee);		// hovering
+void takeoff();		// take off
+void land();		//landing
+void move(float lx, float ly, float lz, float ax, float ay, float az ); // publishing command velocity
+void keyboard_control();
+void pose_measurement();
+void angle_calibration();
+void position_calibration();
+void wait(double x);
+
+int main(int argc, char **argv)
+{
+	//Initiate the ROS
+
+	ros::init(argc, argv, "waypoint_nav");
+	ros::NodeHandle n; 			// Nodehandle is like a class where you are operating
+
+	// Publishing the data
+	velocity_publisher = n.advertise<geometry_msgs::Twist>("/cmd_vel", 100); // initialize to send the Control Input
+
+	T_pub_empty = n.advertise<std_msgs::Empty>("/ardrone/takeoff", 1);  //initialize to send the take off command  /* Message queue length is just 1 */
+
+	L_pub_empty = n.advertise<std_msgs::Empty>("/ardrone/land", 1); //initialize to send the land command /* Message queue length is just 1 */
+
+	// Subscribing the data
+	pose_subscriber = n.subscribe("/ardrone/navdata", 200, poseCallback);	//initialize to receive processed sensor data
+	imu_subscriber = n.subscribe("/ardrone/imu", 200, imuCallback); //initialize to receive raw sensor data
+	gps_subscriber = n.subscribe("/ardrone/navdata_gps", 10, gpsCallback); //initialize to receive gps data
+	//gazebo simulation subscribers
+	sim_state_sub = n.subscribe("/ground_truth/state",10,SimStateCallback);
+        //joy sub
+	joy_sub_ = n.subscribe<sensor_msgs::Joy>("/joy", 10, joyCallback);
+	//vicon data subscriber
+	vicon_sub = n.subscribe("/vicon/ardrone1/ardrone1",200,ViconStateCallback);
+	vicon_sub_2 = n.subscribe("/vicon/lambo/lambo",200,ViconStateCallback_2);
+while(ros::ok())
+{
+
+cout<<"function menu"<<endl;
+cout<<"y : takeoff        h : land         k : keyboard control"<<endl;
+cout<<"a : angle calibration      b : position calibration      c : pose measurement"<<endl;
+cout<<"n : record | t : traj track (simulation) | v : traj track (using vicon)"<<endl;
+cout<<"p : pid control based traj track (simulation) | f : follow human (using vicon)"<<endl;
+    int timee;
+    double x, y, z;
+    int c = getch();   // call your non-blocking input function
+			
+    switch (c)
+    {
+    case 'y':
+    			takeoff();
+    			break;
+    case 'h':
+                        land();
+                        break;
+
+    case 'k':
+			cout<<"\n keyboard control menu"<<endl;
+			keyboard_control();
+    case 'x':
+			cout<<"\n enter hover time"<<endl;
+			cin>>timee;
+    			cout<<"\n Hovering in a place"<<endl;
+    			hover(timee);
+    			break;
+    case 'n':
+    			record();
+    			break;
+    case 'a':
+                        angle_calibration();
+                        break;
+    case 'c':
+                        pose_measurement();
+                        break;
+
+    case 'b':
+                        position_calibration();                        
+                        break;
+    default:
+    			cout<<endl<<"*********** wrong key! Please choose again! *************"<<endl;
+                        cout<<endl;
+    			break;
+    }
+}
+land();
+cout<<"landed";
+}
+
+
+void angle_calibration(){
+ros::Rate loop_rate(10);
+
+double zr0;
+int ctr = 0;
+
+while(ctr<3){
+	zr0=vicon_statedata.transform.rotation.z;
+	ctr = ctr+1;
+
+	ros::spinOnce(); 
+	loop_rate.sleep();
+}
+
+double zr;
+while(ros::ok()){
+	zr=vicon_statedata.transform.rotation.z;
+	cout<<endl<<zr;	
+		move(0,0,0,0,0,-zr/2);
+		wait(0.01);
+	if(abs(zr)<0.01)
+	{
+		move(0,0,0,0,0,0);
+		wait(5);
+		cout<<endl<<"finished!"<<endl;
+		exit(0);
+	}
+	ros::spinOnce();
+	loop_rate.sleep();
+	}
+}
+	
+void position_calibration(){
+	ros::Rate loop_rate(10);
+	/*
+	double x0,y0,z0;
+	int ctr = 0;
+	while(ctr<3){
+		x0 = vicon_statedata.transform.translation.x;
+		y0 = vicon_statedata.transform.translation.y;
+		z0 = vicon_statedata.transform.translation.z;
+		ctr = ctr+1;
+		ros::spinOnce();
+		loop_rate.sleep();
+	}
+	*/
+	double x,y,z;
+	while(ros::ok()){
+		x = vicon_statedata.transform.translation.x;
+		y = vicon_statedata.transform.translation.y;
+		z = vicon_statedata.transform.translation.z;
+		cout<<endl<<x<<"         "<<y<<"           "<<z<<endl;
+		move(y/10,-x/10,0,0,0,0);
+		wait(0.1);
+		ros::spinOnce();
+		loop_rate.sleep();
+		}
+
+}
+
+
+void pose_measurement(){                       // the current position and angle
+ros::Rate loop_rate(10);
+double x0,y0,z0,zr;
+int ctr = 0;
+while(ctr<3){
+x0 = vicon_statedata.transform.translation.x, y0 = vicon_statedata.transform.translation.y, z0 =     vicon_statedata.transform.translation.z;
+zr = vicon_statedata.transform.rotation.z;
+	ctr = ctr+1;
+ ros::spinOnce();
+ loop_rate.sleep();
+}
+cout<<endl<<"x : "<<x0<<"      "<<"y : "<<y0<<"      "<<"z : "<<z0<<"     "<<"angle : "<<zr<<endl;
+cout<<endl;
+}
+
+
+void keyboard_control(){
+ros::Rate loop_rate(10);
+int exit_val=0;
+cout<<"Press a key"<<endl;
+cout<<"y : takeoff           h : land             z : up            c : down         "<<endl;
+cout<<"w : forward           s : backward         a : left          d : right        "<<endl;
+cout<<"q : yaw(counterClockwise)                  e : yaw(Clockwise)"<<endl;
+cout<<"x : exit to the previous menu"<<endl;
+cout<<"The drone will move 1 meter after you press a key"<<endl;
+
+while(exit_val==0){
+int l = getch(); 
+int sval=0.5;
+double t0 = 0,t1 = 0;
+if(l=='z'){
+	t0 = ros::Time::now().toSec();
+	do{
+	t1 = ros::Time::now().toSec();
+	move(0,0,1,0,0,0);
+	}while(t1 <= (t0+1));
+         move(0,0,0,0,0,0);}
+else if(l=='c'){
+	t0 = ros::Time::now().toSec();
+	do{
+	t1 = ros::Time::now().toSec();
+	move(0,0,-1,0,0,0);
+	}while(t1 <= (t0+1));
+         move(0,0,0,0,0,0);}
+else if(l=='w'){
+	t0 = ros::Time::now().toSec();
+	do{
+	t1 = ros::Time::now().toSec();
+	move(1,0,0,0,0,0);
+	}while(t1 <= (t0+1));
+        move(0,0,0,0,0,0);}
+else if(l=='s'){
+	t0 = ros::Time::now().toSec();
+	do{
+	t1 = ros::Time::now().toSec();
+	move(-1,0,0,0,0,0);
+	}while(t1 <= (t0+1));
+         move(0,0,0,0,0,0);}
+else if(l=='a'){
+	t0 = ros::Time::now().toSec();
+	do{
+	t1 = ros::Time::now().toSec();
+	move(0,1,0,0,0,0);
+	}while(t1 <= (t0+1));
+        move(0,0,0,0,0,0);}
+else if(l=='d'){
+	t0 = ros::Time::now().toSec();
+	do{
+	t1 = ros::Time::now().toSec();
+	move(0,-1,0,0,0,0);
+	}while(t1 <= (t0+1));
+        move(0,0,0,0,0,0);}
+else if(l=='q'){
+	t0 = ros::Time::now().toSec();
+	do{
+	t1 = ros::Time::now().toSec();
+	move(0,0,0,0,0,1);
+	}while(t1 <= (t0+1));
+        move(0,0,0,0,0,0);}
+else if(l=='e'){
+	t0 = ros::Time::now().toSec();
+	do{
+	t1 = ros::Time::now().toSec();
+	move(0,0,0,0,0,-1);
+	}while(t1 <= (t0+1));
+        move(0,0,0,0,0,0);}		
+else if(l=='x')
+exit_val = 1;
+else if(l=='y')
+takeoff();
+else if(l=='h')
+land();
+else
+hover(2);
+
+ros::spinOnce(); //if this function is not mentioned the function will stay in the buffer and cannot be able to publish
+loop_rate.sleep();
+}
+}
+
+
+void poseCallback(const ardrone_autonomy::Navdata::ConstPtr & pose_message )
+{
+	drone_navdata.vx	= 	pose_message->vx;
+	drone_navdata.vy 	= 	pose_message->vy;
+	drone_navdata.vz 	= 	pose_message->vz;
+	drone_navdata.ax	= 	pose_message->ax;
+	drone_navdata.ay 	= 	pose_message->ay;
+	drone_navdata.az 	= 	pose_message->az;
+	drone_navdata.rotX	= 	pose_message->rotX;
+	drone_navdata.rotY	= 	pose_message->rotY;
+	drone_navdata.rotZ	= 	pose_message->rotZ;
+	drone_navdata.magX	= 	pose_message->magX;
+	drone_navdata.magY	= 	pose_message->magY;
+	drone_navdata.magZ	= 	pose_message->magZ;
+	drone_navdata.altd 	= 	pose_message->altd;
+	drone_navdata.tm	= 	pose_message->tm;
+	drone_navdata.header	= 	pose_message->header;
+	drone_navdata.batteryPercent= pose_message->batteryPercent;
+}
+void SimStateCallback(const nav_msgs::Odometry::ConstPtr & sim_state_message) //gazebo sim callback fn
+{
+	sim_statedata.pose.pose.position.x	= 	sim_state_message->pose.pose.position.x;
+	sim_statedata.pose.pose.position.y	= 	sim_state_message->pose.pose.position.y;
+	sim_statedata.pose.pose.position.z	= 	sim_state_message->pose.pose.position.z;
+	sim_statedata.twist.twist.linear.x	= 	sim_state_message->twist.twist.linear.x;
+	sim_statedata.twist.twist.linear.y	= 	sim_state_message->twist.twist.linear.y;
+	sim_statedata.twist.twist.linear.z	= 	sim_state_message->twist.twist.linear.z;
+	sim_statedata.twist.twist.angular.x	= 	sim_state_message->twist.twist.angular.x;
+	sim_statedata.twist.twist.angular.y	= 	sim_state_message->twist.twist.angular.y;
+	sim_statedata.twist.twist.angular.z	= 	sim_state_message->twist.twist.angular.z;
+	sim_statedata.pose.pose.orientation.x	= 	sim_state_message->pose.pose.orientation.x;//quaternion orientation x,y,z,w
+	sim_statedata.pose.pose.orientation.y	= 	sim_state_message->pose.pose.orientation.y;
+	sim_statedata.pose.pose.orientation.z	= 	sim_state_message->pose.pose.orientation.z;
+	sim_statedata.pose.pose.orientation.w	= 	sim_state_message->pose.pose.orientation.w;
+	
+}
+void ViconStateCallback(const geometry_msgs::TransformStamped::ConstPtr & vicon_state_message)
+{
+	vicon_statedata.transform.translation.x	= 	vicon_state_message->transform.translation.x;
+	vicon_statedata.transform.translation.y	= 	vicon_state_message->transform.translation.y;
+	vicon_statedata.transform.translation.z	= 	vicon_state_message->transform.translation.z;
+	
+	vicon_statedata.transform.rotation.x	= 	vicon_state_message->transform.rotation.x;//quaternion orientation x,y,z,w
+	vicon_statedata.transform.rotation.y	= 	vicon_state_message->transform.rotation.y;
+	vicon_statedata.transform.rotation.z	= 	vicon_state_message->transform.rotation.z;
+	vicon_statedata.transform.rotation.w	= 	vicon_state_message->transform.rotation.w;
+	
+}
+
+void ViconStateCallback_2(const geometry_msgs::TransformStamped::ConstPtr & vicon_state_message) // for lambo (RC CAR)
+{
+	vicon_statedata_2.transform.translation.x	= 	vicon_state_message->transform.translation.x;
+	vicon_statedata_2.transform.translation.y	= 	vicon_state_message->transform.translation.y;
+	//vicon_statedata_2.transform.translation.z	= 	vicon_state_message->transform.translation.z;
+	
+}
+
+void imuCallback(const sensor_msgs::Imu::ConstPtr & imu_message)
+{
+	ang.header	= 	imu_message->header;
+	ang.angular_velocity	= 	imu_message->angular_velocity;
+	ang.linear_acceleration =  imu_message->linear_acceleration;
+}
+
+void gpsCallback(const ardrone_autonomy::navdata_gps::ConstPtr & gps_message)
+{
+	lat	= 	gps_message->lat_fused;
+	lon 	= 	gps_message->long_fused;
+	ele 	= 	gps_message->elevation;
+}
+
+void joyCallback(const sensor_msgs::Joy::ConstPtr & joy )
+{
+	lx = joy->axes[0];
+	ly = joy->axes[1];
+	az = joy->axes[2];
+	lz = joy->axes[3];
+	to = joy->buttons[8];
+	la = joy->buttons[9];
+}
+
+int getch()
+{
+  static struct termios oldt, newt;
+  tcgetattr( STDIN_FILENO, &oldt);           // save old settings
+  newt = oldt;
+  newt.c_lflag &= ~(ICANON);                 // disable buffering
+  tcsetattr( STDIN_FILENO, TCSANOW, &newt);  // apply new settings
+
+  int c = getchar();  // read character (non-blocking)
+
+  tcsetattr( STDIN_FILENO, TCSANOW, &oldt);  // restore old settings
+  return c;
+}
+
+double deg2rad(double angle_in_degrees)
+{
+	return angle_in_degrees*PI/180.0;
+}
+
+double getDistance(double x1, double y1, double z1, double x2, double y2, double z2)
+{
+	return sqrt(pow(x1-x2, 2)+pow(y1-y2, 2)+pow(z1-z2, 2));
+}
+
+void takeoff()
+{
+	ros::Rate loop_rate(10);
+	while (ros::ok())
+		{
+			double init_time=ros::Time::now().toSec();  // epoch time
+			double time;
+			while (time < (init_time+5.0)) /* Send command for five seconds*/
+			{
+				T_pub_empty.publish(emp_msg); /* launches the drone */
+				ros::spinOnce(); // feedback
+				loop_rate.sleep();
+				time = ros::Time::now().toSec();
+			}//time loop
+		exit(0);
+		}//ros::ok loop
+
+}
+
+void land()
+{
+	ros::Rate loop_rate(10);
+	while (ros::ok())
+		{
+			double init_time=ros::Time::now().toSec();
+			double time;
+			while (time < (init_time+5.0)) /* Send command for five seconds*/
+			{
+				L_pub_empty.publish(emp_msg); /* lands the drone */
+				ros::spinOnce();
+				loop_rate.sleep();
+				time = ros::Time::now().toSec();
+			}//time loop
+		exit(0);
+		}//ros::ok loop
+
+}
+
+void hover(int timee)
+{
+
+	double t0 = ros::Time::now().toSec(); //ros has a 'Time' function in which the current time can be found by using 'now'.                                         							we need time in sec to compute hence 'tosec'
+	double t1;
+
+	ros::Rate loop_rate(200);
+
+	do{
+
+		t1 = ros::Time::now().toSec(); //ros has a 'Time' function in which the current time can be found by using 'now'.                                         							we need time in sec to compute hence 'tosec'
+
+		vel_msg.linear.x = 0;
+		vel_msg.linear.y = 0;
+		vel_msg.linear.z = 0;
+
+		vel_msg.angular.x = 0;
+		vel_msg.angular.y = 0;
+		vel_msg.angular.z = 0;
+
+	velocity_publisher.publish(vel_msg);
+
+	ros::spinOnce(); //if this function is not mentioned the function will stay in the buffer and cannot be able to publish
+	loop_rate.sleep();
+
+	}while(t1 <= (t0+timee));
+
+	//ros::spinOnce();
+}
+
+void wait(double x)
+{
+   double t0,t1;
+   t0 = ros::Time::now().toSec();
+   do{
+         t1 = ros::Time::now().toSec();
+     }while(t1<(t0+x));
+}
+
+void move(float lx, float ly, float lz, float ax, float ay, float az )
+{
+
+	//defining the linear velocity
+	vel_msg.linear.x = lx;
+	vel_msg.linear.y = ly;
+	vel_msg.linear.z = lz;
+
+	//defining the linear velocity
+	vel_msg.angular.x = ax;
+	vel_msg.angular.y = ay;
+	vel_msg.angular.z = az;
+
+	velocity_publisher.publish(vel_msg);
+
+}
+
+void record()
+{
+	double t0=ros::Time::now().toSec();
+	double i =0, f= 200.0, d2r = 3.14159265/180,dt;
+	ofstream myfile;
+	myfile.open("data/recorded_data.txt", ios::out | ios::app );
+	myfile<<"gx gy gz ax ay az vxo vyo vzo theta phi psi lat lon ele T"<<endl;
+	ros::Rate loop_rate(200);
+	do{		//if(i<=500)
+			move(0.1,0,0,0,0,0);
+
+			myfile<<ang.angular_velocity.x<<setw(20);
+			myfile<<ang.angular_velocity.y<<setw(20);
+			myfile<<ang.angular_velocity.z<<setw(20);
+
+
+			myfile<<ang.linear_acceleration.x<<setw(20);
+			myfile<<ang.linear_acceleration.y<<setw(20);
+			myfile<<ang.linear_acceleration.z<<setw(20);
+
+			myfile<<drone_navdata.vx*0.001<<setw(20);
+			myfile<<drone_navdata.vy*0.001<<setw(20);
+			myfile<<drone_navdata.vz*0.001<<setw(20);
+
+			myfile<<(drone_navdata.rotY)*d2r<<setw(20);//theta-pitch
+			myfile<<(drone_navdata.rotX)*d2r<<setw(20);//phi-roll
+			myfile<<(drone_navdata.rotZ)*d2r<<setw(20);
+			
+			myfile<<setprecision(12)<<lat<<setw(20);
+			myfile<<setprecision(12)<<lon<<setw(20);
+			myfile<<setprecision(12)<<ele<<setw(20);
+
+			double t1=ros::Time::now().toSec();
+			dt = t1-t0;
+			myfile<<dt<<endl;
+
+			i = i+1;
+
+			ros::spinOnce(); //if this function is not mentioned the function will stay in the buffer and cannot be able to publish
+			loop_rate.sleep();
+		}while(i<10000);
+		myfile.close();
+		land();
+}
+
+
