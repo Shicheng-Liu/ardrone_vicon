@@ -32,5 +32,8 @@ catkin_make
 Then, you can download packages:
 ```
 cd src
-git clone
+git clone https://github.com/Shicheng-Liu/ardrone_vicon.git
+cd ..
+catkin_make
 ```
+Finished!
