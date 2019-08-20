@@ -38,7 +38,7 @@ cd ..
 catkin_make
 ```
 **ATTENTION**: Please connect to the Internet when catkin_make
-Finished!
+<br>Finished!
 <br>You may also want to add path to the evironment:
 ```
 gedit ~/.bashrc
