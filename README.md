@@ -63,3 +63,13 @@ Open another terminal:
 rosrun ardrone_vicon ardrone_vicon_node
 ```
 Since we have added path to the environment, we have no need to source the environment now. Now you will see a menu like this:
+        
+   ![menu](https://github.com/Shicheng-Liu/ardrone_vicon/blob/master/menu.png)
+<br>
+Choose y to take off is always the first step, and then you can choose functions you want.
+<br>
+
+Funtions Introduction
+-
+**k:keyboard control**
+<br> You will say a new menu like this after you press k:
