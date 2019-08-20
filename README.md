@@ -71,5 +71,49 @@ Choose y to take off is always the first step, and then you can choose functions
 
 Funtions Introduction
 -
-**k:keyboard control**
+**k  :  keyboard control**
 <br> You will say a new menu like this after you press k:
+
+![image](https://github.com/Shicheng-Liu/ardrone_vicon/blob/master/keyboard%20control.png)
+<br>
+The drone will act exactly like the menu says.
+<br>
+<br>
+**a  :  calibration**
+<br> 
+The drone will calibrate its angle and position, the angle will be less than 8 degree and the position will be about the origin.
+**NOTE** : In my scenario, the coordinate system of drone is different from that of _vicon_ : The x axis of drone is actually the -y axis of _vicon_ and the y axis of drone is actually the -x axis of _vicon_. Accordingly, if your situation is different, please go to _ardrone_vicon.cpp_ and change the coordinate system.
+<br>
+<br>
+**b  :  trajectory**
+<br>
+The drone will move to (0,0) (1,1) (1,-1) (-1,-1) (-1,1) (0,0)
+<br>
+<br>
+**c  :  pose measurement**
+<br>
+You will see the basic state if your drone, like the position in 3D dimension and the angle of the drone.
+<br>
+<br>
+**f  :  target follow**
+<br> 
+First, you need to add a new object in _vicon tracker_ and name it _target_.<br>
+Then you can use this funtion: the drone will track target wherever you move the target. This funtion uses simple difference to realize following and the drone will be about 2 meters away from the target.
+<br>
+<br>
+**p  :  potential field track**
+<br>
+This function is similiar to _target follow_ but uses a different method [potential field](http://kovan.ceng.metu.edu.tr/~asil/old/_1./wh2.html)
+<br> The drone will track your target.
+<br>
+<br>
+**l  :  potential field repulse**
+<br>
+This funtion is at the opposite of track: the drone will move away from the object as if the target has a repulsive power.
+<br> First, you need to add sa new object in _vicon_tracker_ and name it _obstacle_.
+<br> Then you can find the drone moving away from the obstacle.
+<br>
+<br>
+**m  :  potential field track with obstacle**
+<br>
+This function is a combination of the last two functions, you can track a tracking while avoiding an obstacle.
