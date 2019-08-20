@@ -12,7 +12,7 @@ How to use vicon to communicate with your ROS
 -----
 For now, you have _vicon_ and two computers: one is ubuntu computer and the other one is windows computer where the _vicon tracker_ is installed.<br>
 We need a router to help the computers connect with vicon: close DHCP function and insert both vicon and your computers into the ethernet interfaces.
-<br> Then we need to put vicon and your computers under one network segment：the default IP address of vicon is 192.168.10.1, so we can configure the router's IP address(now we uses it as a switch) as 192.168.10.254 and your ubuntu computer's IP address as 192.168.10.253. Your windows computer is 192.168.10.1 since it has _vicon tracker_ already been installed before.
+<br> Then we need to put vicon and your computers under one network segment：the default IP address of vicon is 192.168.10.1, so we can configure the router's IP address(now we uses it as a switch) as 192.168.10.254 and your ubuntu computer's IP address as 192.168.10.253(If your Ubuntu is installed in a virtual machine, please configure the IP address on the host computer). Your windows computer is 192.168.10.1 since it has _vicon tracker_ already been installed before.
 <br> Now, all the hardware connection is finished.
 <br>
 
