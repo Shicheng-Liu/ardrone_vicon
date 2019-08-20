@@ -26,7 +26,7 @@ mkdir vicon
 cd vicon
 mkdir src
 cd src
-catkin_workspace_init
+catkin_init_workspace
 cd ..
 catkin_make
 ```
