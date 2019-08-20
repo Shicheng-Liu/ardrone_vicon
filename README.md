@@ -5,8 +5,8 @@ This repository documents some works on an ardrone project using vicon.
 
 Systems work on
 -----
-Ubuntu14              ROS indigo  <br>
-Ubuntu16                  ROS kinetic
+Ubuntu14         &nbsp;    &nbsp;   ROS indigo  <br>
+Ubuntu16           &nbsp;    &nbsp;          ROS kinetic
 
 How to use vicon to communicate with your ROS
 -----
@@ -72,7 +72,7 @@ Choose y to take off is always the first step, and then you can choose functions
 Funtions Introduction
 -
 **k  :  keyboard control**
-<br> You will say a new menu like this after you press k:
+<br> You will see a new menu like this after you press k:
 
 ![image](https://github.com/Shicheng-Liu/ardrone_vicon/blob/master/keyboard%20control.png)
 <br>
