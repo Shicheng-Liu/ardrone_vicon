@@ -57,9 +57,13 @@ Before using _ardrone_vicon_, make sure you have followed all the steps above su
 <br> Open _vicon tracker_ and choose object, connect the WIFI of your ardrone.
 <br> Open a terminal:
 ```
-roslaunch ardrone_vicon ardrone.launch
+roslaunch vicon_bridge vicon.launch
 ```
 Open another terminal:
+```
+rosrun ardrone_autonomy ardrone_driver
+```
+Open a third one:
 ```
 rosrun ardrone_vicon ardrone_vicon_node
 ```
