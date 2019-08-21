@@ -134,25 +134,19 @@ cout<<"m : potential field track with obstacle"<<endl;
     switch (c)
     {
     case 'y':
-    			takeoff();
-    			break;
+    			        takeoff();
+    			        break;
     case 'h':
                         land();
                         break;
 
     case 'k':
-			cout<<"\n keyboard control menu"<<endl;
-			keyboard_control();
-    case 'x':
-			cout<<"\n enter hover time"<<endl;
-			cin>>timee;
-    			cout<<"\n Hovering in a place"<<endl;
-    			hover(timee);
-    			break;
+			            cout<<"\n keyboard control menu"<<endl;
+			            keyboard_control();
 	
-	case 'f':
-                target_follow();
-				break;
+	case 'f': 
+                        target_follow();
+				        break;
 
     case 'a':
                         calibration();
@@ -166,20 +160,20 @@ cout<<"m : potential field track with obstacle"<<endl;
 						break;
    
     case 'l':
-	           potential_obstacle();
-			   break;
+	                    potential_obstacle();
+			            break;
 
 	case 'm':
-	          potential_track_obstacle();
-			  break;
+	                    potential_track_obstacle();
+			            break;
 
     case 'b':
                         trajectory();                        
                         break;
     default:
-    			cout<<endl<<"*********** wrong key! Please choose again! *************"<<endl;
+    			        cout<<endl<<"*********** wrong key! Please choose again! *************"<<endl;
                         cout<<endl;
-    			break;
+    			        break;
     }
 }
 land();
@@ -216,8 +210,8 @@ while(ros::ok()){
 	ix+=x, iy+=y;
 	dx=px-ex, dy=py-ey;
 	ex=x, ey=y;
-	out_x=0.1*py+0.00004*iy+0.004*dy;//+0.1*dy+0.00001*iy;//+0.0097*iy-0.2037*dy;//+iy/3000;
-    out_y=0.1*px+0.00004*ix+0.004*dy;//+0.1*dx+0.00001*ix;//+0.0097*ix+0.2037*dx;//+ix/3000;
+	out_x=0.1*py+0.00004*iy+0.007*dy;//+0.1*dy+0.00001*iy;//+0.0097*iy-0.2037*dy;//+iy/3000;
+    out_y=0.1*px+0.00004*ix+0.007*dx;//+0.1*dx+0.00001*ix;//+0.0097*ix+0.2037*dx;//+ix/3000;
     //wait(0.01);
     cout<<endl<<"     "<<"x : "<<-y<<"         "<<"y : "<<-x<<"           "<<"z : "<<z<<endl;
 	if(abs(yaw)<0.15)
@@ -279,10 +273,24 @@ while(ros::ok()){
 	double destination = distance_difference-2;
 	double target_angle;
 	target_angle = asin((x1-x)/distance_difference);
+	if(y1>y)
+	{
+		target_angle = 3.14-asin((x1-x)/distance_difference);
+	}
+	if(x1<x&&y1>y)
+	{
+        target_angle = -3.14-asin((x1-x)/distance_difference);
+	}
 	double angle_difference = target_angle-yaw;
-
-		move(0.07*destination,0,1.2*(z1-z),0,0,angle_difference);
-	    wait(0.01);		
+    if(angle_difference>3.14)
+	{
+        angle_difference=angle_difference-7.28;
+	}
+	if(angle_difference<-3.14)
+	{
+		angle_difference=angle_difference+7.28;
+	}
+	move(0.05*destination,0,1.2*(z1-z),0,0,angle_difference);	
 
 	ros::spinOnce();
 	loop_rate.sleep();
@@ -332,7 +340,7 @@ while(ros::ok()){
 	 previous_y = y, previous_y1=y1;
 	double distance_difference = sqrt((y1-y)*(y1-y)+(x1-x)*(x1-x));
 	double destination = distance_difference-1;
-	double p1=0.05;
+	double p1=0.03;
 	double p2=0.003;
 	double p3=0.003;
 	double desired_speed=p1*destination+p2*speed_target+p3*speed_difference;
@@ -357,7 +365,7 @@ while(ros::ok()){
 	}
 	
 		move(desired_speed,0,1.2*(z1-z),0,0,angle_difference);
-	    wait(0.01);		
+	    //wait(0.01);		
 
 	ros::spinOnce();
 	loop_rate.sleep();
@@ -525,7 +533,7 @@ while(ros::ok()){
 		angle_difference_target=angle_difference_target+7.28;
 	}
 		move(desired_speed,speed_y,1.2*(z1-z),0,0,angle_difference_target);
-	    wait(0.01);		
+	   // wait(0.01);		
 	ros::spinOnce();
 	loop_rate.sleep();
 	}
@@ -735,9 +743,9 @@ void land()
 		{
 			double init_time=ros::Time::now().toSec();
 			double time;
-			while (time < (init_time+5.0)) /* Send command for five seconds*/
+			while (time < (init_time+5.0)) 
 			{
-				L_pub_empty.publish(emp_msg); /* lands the drone */
+				L_pub_empty.publish(emp_msg); 
 				ros::spinOnce();
 				loop_rate.sleep();
 				time = ros::Time::now().toSec();
@@ -750,15 +758,13 @@ void land()
 void hover(int timee)
 {
 
-	double t0 = ros::Time::now().toSec(); //ros has a 'Time' function in which the current time can be found by using 'now'.                                         							we need time in sec to compute hence 'tosec'
-	double t1;
-
+	double t0 = ros::Time::now().toSec(); 						
+    double t1;
 	ros::Rate loop_rate(200);
 
 	do{
 
-		t1 = ros::Time::now().toSec(); //ros has a 'Time' function in which the current time can be found by using 'now'.                                         							we need time in sec to compute hence 'tosec'
-
+		t1 = ros::Time::now().toSec();  					
 		vel_msg.linear.x = 0;
 		vel_msg.linear.y = 0;
 		vel_msg.linear.z = 0;
@@ -834,8 +840,8 @@ while(ros::ok()){
 	ix+=px, iy+=py;
 	dx=px-ex, dy=py-ey;
 	ex=x-goal_x, ey=y-goal_y;
-	out_x=0.1*py;//+0.004*dy+0.00004*iy;//+0.0097*iy-0.2037*dy;//+iy/3000;
-    out_y=0.1*px;//+0.004*dx+0.00004*ix;//+0.0097*ix+0.2037*dx;//+ix/3000;
+	out_x=0.1*py+0.004*dy+0.00004*iy;//+0.0097*iy-0.2037*dy;//+iy/3000;
+    out_y=0.1*px+0.004*dx+0.00004*ix;//+0.0097*ix+0.2037*dx;//+ix/3000;
 	if(abs(yaw)<0.15)
 	{
 		move(out_x,-out_y,0,0,0,-yaw);
