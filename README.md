@@ -24,17 +24,11 @@ This repository consists of three packages, `ardrone_autonomy` is the driver of 
 ```
 mkdir vicon
 cd vicon
-mkdir src
-cd src
-catkin_init_workspace
-cd ..
-catkin_make
-```
-Then, you can download packages:
-```
-cd src
 git clone https://github.com/Shicheng-Liu/ardrone_vicon.git
-cd ..
+```
+Now, you can see a package in your folder _vicon_, please change the name of this package from _ardrone_vicon_ to _src_.
+<br> Then, we need to compile your workspace
+```
 catkin_make
 ```
 **ATTENTION**: Please connect to the Internet when catkin_make
