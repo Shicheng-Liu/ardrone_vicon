@@ -80,8 +80,8 @@ The drone will act exactly like the menu says.
 <br>
 **a  :  calibration**
 <br> 
-The drone will calibrate its angle and position, the angle will be less than 8 degree and the position will be about the origin.
-**NOTE** : In my scenario, the coordinate system of drone is different from that of _vicon_ : The x axis of drone is actually the -y axis of _vicon_ and the y axis of drone is actually the -x axis of _vicon_. Accordingly, if your situation is different, please go to _ardrone_vicon.cpp_ and change the coordinate system.
+The drone will calibrate its angle and position, the angle will be less than 8 degree and the position will be about the origin. You need add an object in _vicon tracker_ and name it as ardrone1.
+<br>**NOTE** : In my scenario, the coordinate system of drone is different from that of _vicon_ : The x axis of drone is actually the -y axis of _vicon_ and the y axis of drone is actually the -x axis of _vicon_. Accordingly, if your situation is different, please go to _ardrone_vicon.cpp_ and change the coordinate system.
 <br>
 <br>
 **b  :  trajectory**
