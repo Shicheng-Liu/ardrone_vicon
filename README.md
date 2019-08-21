@@ -109,7 +109,7 @@ This function is similiar to _target follow_ but uses a different method [potent
 **l  :  potential field repulse**
 <br>
 This funtion is at the opposite of track: the drone will move away from the object as if the target has a repulsive power.
-<br> First, you need to add sa new object in _vicon_tracker_ and name it _obstacle_.
+<br> First, you need to add a new object in _vicon_tracker_ and name it _obstacle_.
 <br> Then you can find the drone moving away from the obstacle.
 <br>
 <br>
