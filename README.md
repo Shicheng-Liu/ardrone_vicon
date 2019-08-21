@@ -26,7 +26,7 @@ mkdir vicon
 cd vicon
 git clone https://github.com/Shicheng-Liu/ardrone_vicon.git
 ```
-Now, you can see a package in your folder _vicon_, please change the name of this package from _ardrone_vicon_ to _src_.
+Now, you can see a package in your folder _vicon_, **please change the name of this package from _ardrone_vicon_ to _src_.**
 <br> Then, we need to compile your workspace
 ```
 catkin_make
