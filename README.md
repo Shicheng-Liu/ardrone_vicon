@@ -106,17 +106,19 @@ This function is similiar to _target follow_ but uses a different method [potent
 <br> The drone will track your target.
 
 ![target](https://github.com/Shicheng-Liu/ardrone_vicon/blob/master/target.gif)
-
 <br>
-<br>
+The orange one is the target, the blue is the drone.
 
 **l  :  potential field repulse**
 <br>
 This funtion is at the opposite of track: the drone will move away from the object as if the target has a repulsive power.
 <br> First, you need to add a new object in _vicon_tracker_ and name it _obstacle_.
 <br> Then you can find the drone moving away from the obstacle.
+
+![obstacle](https://github.com/Shicheng-Liu/ardrone_vicon/blob/master/obstacle.gif)
 <br>
-<br>
+The orange one is the obstacle, the blue is the drone
+
 **m  :  potential field track with obstacle**
 <br>
 This function is a combination of the last two functions, you can track a tracking while avoiding an obstacle.
