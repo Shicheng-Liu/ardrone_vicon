@@ -104,8 +104,12 @@ Then you can use this funtion: the drone will track target wherever you move the
 <br>
 This function is similiar to _target follow_ but uses a different method [potential field](http://kovan.ceng.metu.edu.tr/~asil/old/_1./wh2.html)
 <br> The drone will track your target.
+
+![target](https://github.com/Shicheng-Liu/ardrone_vicon/blob/master/target.gif)
+
 <br>
 <br>
+
 **l  :  potential field repulse**
 <br>
 This funtion is at the opposite of track: the drone will move away from the object as if the target has a repulsive power.
