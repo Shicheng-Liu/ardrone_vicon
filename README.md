@@ -124,3 +124,5 @@ The orange one is the obstacle, the blue is the drone
 This function is a combination of the last two functions, you can track a tracking while avoiding an obstacle.
 
 ![target_obstacle](https://github.com/Shicheng-Liu/ardrone_vicon/blob/master/target_obstacle.gif)
+<br>
+The orange one is the target, the yellow is the obstacle, the blue is the drone
