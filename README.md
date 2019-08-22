@@ -122,3 +122,5 @@ The orange one is the obstacle, the blue is the drone
 **m  :  potential field track with obstacle**
 <br>
 This function is a combination of the last two functions, you can track a tracking while avoiding an obstacle.
+
+![target_obstacle](https://github.com/Shicheng-Liu/ardrone_vicon/blob/master/target_obstacle.gif)
