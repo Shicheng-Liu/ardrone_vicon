@@ -332,8 +332,8 @@ while(ros::ok()){
 		speed_target=0;
 	}
 	else{
-	    speed_difference = 10*(sqrt((x1-previous_x1)*(x1-previous_x1)+(y1-previous_y1)*(y1-previous_y1))*(previous_y1-y1)/(abs(previous_y1-y1))-sqrt((x-previous_x)*(x-previous_x)+(y-previous_y)*(y-previous_y))*(previous_y1-y1)/(abs(previous_y1-y1)));
-		speed_target = 10*(sqrt((x1-previous_x1)*(x1-previous_x1)+(y1-previous_y1)*(y1-previous_y1)))*(previous_y1-y1)/(abs(previous_y1-y1));
+	    speed_difference = 100*(sqrt((x1-previous_x1)*(x1-previous_x1)+(y1-previous_y1)*(y1-previous_y1))*(previous_y1-y1)/(abs(previous_y1-y1))-sqrt((x-previous_x)*(x-previous_x)+(y-previous_y)*(y-previous_y))*(previous_y1-y1)/(abs(previous_y1-y1)));
+		speed_target = 100*(sqrt((x1-previous_x1)*(x1-previous_x1)+(y1-previous_y1)*(y1-previous_y1)))*(previous_y1-y1)/(abs(previous_y1-y1));
 	}
     //cout<<endl<<speed_target<<"          "<<speed_difference<<endl;
 	 previous_x = x, previous_x1=x1;
@@ -407,8 +407,8 @@ while(ros::ok()){
 		speed_obstacle=0;
 	}
 	else{
-	    speed_difference = 10*(sqrt((x1-previous_x1)*(x1-previous_x1)+(y1-previous_y1)*(y1-previous_y1))*(previous_y1-y1)/(abs(previous_y1-y1))-sqrt((x-previous_x)*(x-previous_x)+(y-previous_y)*(y-previous_y))*(previous_y1-y1)/(abs(previous_y1-y1)));
-		speed_obstacle = 10*(sqrt((x1-previous_x1)*(x1-previous_x1)+(y1-previous_y1)*(y1-previous_y1)))*(previous_y1-y1)/(abs(previous_y1-y1));
+	    speed_difference = 100*(sqrt((x1-previous_x1)*(x1-previous_x1)+(y1-previous_y1)*(y1-previous_y1))*(previous_y1-y1)/(abs(previous_y1-y1))-sqrt((x-previous_x)*(x-previous_x)+(y-previous_y)*(y-previous_y))*(previous_y1-y1)/(abs(previous_y1-y1)));
+		speed_obstacle = 100*(sqrt((x1-previous_x1)*(x1-previous_x1)+(y1-previous_y1)*(y1-previous_y1)))*(previous_y1-y1)/(abs(previous_y1-y1));
 	}
     
 	 previous_x = x, previous_x1=x1;
@@ -479,8 +479,8 @@ while(ros::ok()){
 		speed_target=0;
 	}
 	else{
-	    speed_difference = 10*(sqrt((x1-previous_x1)*(x1-previous_x1)+(y1-previous_y1)*(y1-previous_y1))*(previous_y1-y1)/(abs(previous_y1-y1))-sqrt((x-previous_x)*(x-previous_x)+(y-previous_y)*(y-previous_y))*(previous_y1-y1)/(abs(previous_y1-y1)));
-		speed_target = 10*(sqrt((x1-previous_x1)*(x1-previous_x1)+(y1-previous_y1)*(y1-previous_y1)))*(previous_y1-y1)/(abs(previous_y1-y1));
+	    speed_difference = 100*(sqrt((x1-previous_x1)*(x1-previous_x1)+(y1-previous_y1)*(y1-previous_y1))*(previous_y1-y1)/(abs(previous_y1-y1))-sqrt((x-previous_x)*(x-previous_x)+(y-previous_y)*(y-previous_y))*(previous_y1-y1)/(abs(previous_y1-y1)));
+		speed_target = 100*(sqrt((x1-previous_x1)*(x1-previous_x1)+(y1-previous_y1)*(y1-previous_y1)))*(previous_y1-y1)/(abs(previous_y1-y1));
 	}
     
 	 previous_x = x, previous_x1=x1;
