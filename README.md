@@ -53,6 +53,11 @@ Before using _ardrone_vicon_, make sure you have followed all the steps above su
 ```
 roslaunch vicon_bridge vicon.launch
 ```
+You can see the topic and subscribe your object topic if you want.
+```
+rostopic list
+rostopic echo your_chosen_topic
+```
 Open another terminal:
 ```
 rosrun ardrone_autonomy ardrone_driver
